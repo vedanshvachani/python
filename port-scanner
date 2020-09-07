@@ -1,0 +1,63 @@
+#!/usr/bin/python3
+import os,socket,sys
+'''
+@Topic: Port scanner, will scan all well known ports of the particular ip address.
+User needs to pass ip-address as a argument or the ip range (192.168.0.2 or 192.168.0.0/24)
+Used arp function to get all the ip-address of a particular network (arp-a)
+'''
+os.system("clear")
+print("------------------------------------PORT SCANNER----------------------------------")
+def port_scanner(ip): #this function creates a socket connection with the ip address and checks whether the port is open or closed
+    print(ip)
+    for port, port_name in port_dic.items():
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) #these are the protocols used by socket for tcp (IPv4)
+            rs = sock.connect_ex((ip,int(port)))#CONNECTION is being established and checking the port
+            if(rs == 0):
+                print("Open Port "+str(port)+" "+port_name)
+            else:
+                print("Closed Port "+str(port)+" "+port_name)
+    print("-----------------------------------------------------------------------------------") 
+def check_ip(ip): #this function checks the range of ip-address
+    ip_list = ip.split(".")
+    if ( int(ip_list[0]) >= 1 and int(ip_list[0]) <= 127 ): #class A
+        ip = ip_list[0]+".0.0.0/24"
+        return ip
+    elif ( int(ip_list[0]) >= 128 and int(ip_list[0]) <= 191 ): #class B
+        ip = ip_list[0]+"."+ip_list[1]+".0.0/24"
+        return ip
+    elif ( int(ip_list[0]) >= 192 and int(ip_list[0]) <= 223 ): #class C
+        ip = ip_list[0]+"."+ip_list[1]+"."+ip_list[2]+".0/24"
+        return ip
+
+def checkArg(argg): #here i am checking the argument that is being passed by the user if its valid or not
+    if (len(sys.argv) == 0):
+        argg = "--help"
+    elif(argg == "--help"):
+        print("Please pass a valid ip address, for eg 192.168.0.55 or 192.168.0.0/24")
+    else:
+        return argg
+
+try:
+    #there is a dictionary with all the popular ports and the service name. Socket program will check the connection with this particular ports and if its open then it will be displayed
+    port_dic = {80:"HTTP", 22:"SSH", 110:"POP3", 3306:"MYSQL", 23:"TELNET", 21:"FTP"}
+    argg = sys.argv[1]
+    #sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    argg = checkArg(argg)
+    ip_address = os.popen('arp -a | grep -v "incomplete" | cut -d" " -f2').read()
+    ip = ip_address.replace("(","").replace(")","")
+    ip_addr_list = ip.split("\n")
+    ip_addr_list.append(socket.gethostbyname(socket.gethostname())) #this gives me the hosts private ip-address
+    ip_addr_list.remove("")
+    if(argg == check_ip(argg) or argg == "--help"):
+        for i in ip_addr_list:
+            port_scanner(i)
+    elif argg in ip_addr_list:
+        port_scanner(argg)
+    else:
+        print("INVALID IP")
+    
+except socket.error:
+    print("Error")
+except IndexError:
+    argg="--help"
+    checkArg(argg)
